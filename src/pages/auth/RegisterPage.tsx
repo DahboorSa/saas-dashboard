@@ -1,36 +1,120 @@
 import AuthBrand from '@/components/auth/AuthBrand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { registerApi } from '@/lib/api/client';
-import { useState } from 'react';
+import { getPlans, registerApi } from '@/lib/api/client';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const PLANS = [
-  {
-    id: 'free',
-    name: 'Free',
-    desc: '1k API calls/mo · 1 webhook · 2 members',
-    price: '$0',
-    per: 'forever',
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    desc: '100k API calls/mo · 10 webhooks · 25 members',
-    price: '$49',
-    per: 'per month',
-    trial: '14-day trial',
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    desc: 'Unlimited · SAML · 99.99% SLA',
-    price: 'Custom',
-    per: '30-day trial',
-  },
-] as const;
+type Plan = {
+  id: number;
+  name: string;
+  price: number;
+  stripePriceId: string | null;
+  trialDays: number;
+  limits: {
+    maxApiKeys: number;
+    maxMembers: number;
+    maxProjects: number;
+    maxWebhooks: number;
+    apiCallsPerMonth: number;
+  };
+  features: {
+    export: boolean;
+    webhooks: boolean;
+    analytics: boolean;
+    customDomain: boolean;
+  };
+  isActive: boolean;
+  isDefault: boolean;
+};
 
-type PlanId = (typeof PLANS)[number]['id'];
+const FALLBACK_PLANS: Plan[] = [
+  {
+    id: 1,
+    name: 'Free',
+    price: 0,
+    stripePriceId: null,
+    trialDays: 0,
+    limits: {
+      maxApiKeys: 2,
+      maxMembers: 5,
+      maxProjects: 10,
+      maxWebhooks: 0,
+      apiCallsPerMonth: 100,
+    },
+    features: {
+      export: false,
+      webhooks: false,
+      analytics: false,
+      customDomain: false,
+    },
+    isActive: true,
+    isDefault: true,
+  },
+  {
+    id: 2,
+    name: 'Pro',
+    price: 19,
+    stripePriceId: null,
+    trialDays: 14,
+    limits: {
+      maxApiKeys: 10,
+      maxMembers: 25,
+      maxProjects: 100,
+      maxWebhooks: 100,
+      apiCallsPerMonth: 50000,
+    },
+    features: {
+      export: false,
+      webhooks: true,
+      analytics: true,
+      customDomain: false,
+    },
+    isActive: true,
+    isDefault: false,
+  },
+  {
+    id: 3,
+    name: 'Enterprise',
+    price: 99,
+    stripePriceId: null,
+    trialDays: 30,
+    limits: {
+      maxApiKeys: -1,
+      maxMembers: -1,
+      maxProjects: -1,
+      maxWebhooks: -1,
+      apiCallsPerMonth: -1,
+    },
+    features: {
+      export: true,
+      webhooks: true,
+      analytics: true,
+      customDomain: true,
+    },
+    isActive: true,
+    isDefault: false,
+  },
+];
+
+function formatApiCalls(value: number) {
+  if (value === -1) return 'Unlimited API calls/mo';
+  if (value >= 1000) return `${(value / 1000).toFixed(0)}k API calls/mo`;
+  return `${value} API calls/mo`;
+}
+
+function getPlanDesc(plan: Plan) {
+  const calls = formatApiCalls(plan.limits.apiCallsPerMonth);
+  const webhooks =
+    plan.limits.maxWebhooks === -1
+      ? 'unlimited webhooks'
+      : `${plan.limits.maxWebhooks} webhooks`;
+  const members =
+    plan.limits.maxMembers === -1
+      ? 'unlimited members'
+      : `${plan.limits.maxMembers} members`;
+  return `${calls} · ${webhooks} · ${members}`;
+}
 
 function toSlug(value: string) {
   return value
@@ -49,8 +133,22 @@ export default function RegisterPage() {
   const [orgName, setOrgName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<number>(2);
   const [terms, setTerms] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>(FALLBACK_PLANS);
+
+  useEffect(() => {
+    getPlans()
+      .then((res) => {
+        const data: Plan[] = res.data;
+        setPlans(data);
+        const pro = data.find((p) => p.name === 'Pro') ?? data[1] ?? data[0];
+        if (pro) setSelectedPlan(pro.id);
+      })
+      .catch(() => {
+        // FALLBACK_PLANS already set as initial state
+      });
+  }, []);
 
   const [error, setError] = useState({
     firstName: '',
@@ -63,14 +161,22 @@ export default function RegisterPage() {
   const [apiError, setAPIError] = useState('');
 
   const validateForm = () => {
-    const e = { firstName: '', lastName: '', email: '', orgName: '', password: '', terms: '' };
+    const e = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      orgName: '',
+      password: '',
+      terms: '',
+    };
     if (!firstName) e.firstName = 'First name is required';
     if (!lastName) e.lastName = 'Last name is required';
     if (!email) e.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Invalid email format';
     if (!orgName) e.orgName = 'Organization name is required';
     if (!password) e.password = 'Password is required';
-    else if (password.length < 12) e.password = 'Password must be at least 12 characters';
+    else if (password.length < 12)
+      e.password = 'Password must be at least 12 characters';
     if (!terms) e.terms = 'You must agree to the Terms and Privacy Policy';
     setError(e);
     return Object.values(e).every((v) => v === '');
@@ -113,10 +219,14 @@ export default function RegisterPage() {
               </label>
               <Input
                 id="firstName"
-                placeholder="Sebaa"
+                placeholder="first name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className={error.firstName ? 'border-destructive focus-visible:ring-destructive' : ''}
+                className={
+                  error.firstName
+                    ? 'border-destructive focus-visible:ring-destructive'
+                    : ''
+                }
                 aria-invalid={!!error.firstName}
               />
               {error.firstName && (
@@ -129,10 +239,14 @@ export default function RegisterPage() {
               </label>
               <Input
                 id="lastName"
-                placeholder="Dahboor"
+                placeholder="last name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className={error.lastName ? 'border-destructive focus-visible:ring-destructive' : ''}
+                className={
+                  error.lastName
+                    ? 'border-destructive focus-visible:ring-destructive'
+                    : ''
+                }
                 aria-invalid={!!error.lastName}
               />
               {error.lastName && (
@@ -152,7 +266,11 @@ export default function RegisterPage() {
               placeholder="you@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={error.email ? 'border-destructive focus-visible:ring-destructive' : ''}
+              className={
+                error.email
+                  ? 'border-destructive focus-visible:ring-destructive'
+                  : ''
+              }
               aria-invalid={!!error.email}
             />
             {error.email && (
@@ -170,14 +288,17 @@ export default function RegisterPage() {
               placeholder="Acme Cloud"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
-              className={error.orgName ? 'border-destructive focus-visible:ring-destructive' : ''}
+              className={
+                error.orgName
+                  ? 'border-destructive focus-visible:ring-destructive'
+                  : ''
+              }
               aria-invalid={!!error.orgName}
             />
             {slug && (
               <p className="text-xs text-muted-foreground">
-                Slug:{' '}
-                <span className="font-mono text-foreground">{slug}</span>
-                {' '}· auto-generated, editable later
+                Slug: <span className="font-mono text-foreground">{slug}</span>{' '}
+                · auto-generated, editable later
               </p>
             )}
             {error.orgName && (
@@ -209,7 +330,7 @@ export default function RegisterPage() {
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              12+ characters · hashed with Argon2
+              12+ characters · at least 1 lowercase, 1 uppercase, 1 number
             </p>
             {error.password && (
               <p className="text-sm text-destructive">{error.password}</p>
@@ -220,7 +341,7 @@ export default function RegisterPage() {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Select a plan</label>
             <div className="flex flex-col gap-2">
-              {PLANS.map((plan) => (
+              {plans.map((plan) => (
                 <button
                   key={plan.id}
                   type="button"
@@ -232,9 +353,13 @@ export default function RegisterPage() {
                   }`}
                 >
                   {/* Radio dot */}
-                  <div className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                    selectedPlan === plan.id ? 'border-primary' : 'border-muted-foreground/40'
-                  }`}>
+                  <div
+                    className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                      selectedPlan === plan.id
+                        ? 'border-primary'
+                        : 'border-muted-foreground/40'
+                    }`}
+                  >
                     {selectedPlan === plan.id && (
                       <div className="w-2 h-2 rounded-full bg-primary" />
                     )}
@@ -242,19 +367,23 @@ export default function RegisterPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-sm font-medium">
                       {plan.name}
-                      {'trial' in plan && (
+                      {plan.trialDays > 0 && (
                         <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium">
-                          {plan.trial}
+                          {plan.trialDays}-day trial
                         </span>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {plan.desc}
+                      {getPlanDesc(plan)}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-semibold">{plan.price}</div>
-                    <div className="text-xs text-muted-foreground">{plan.per}</div>
+                    <div className="text-sm font-semibold">
+                      {plan.price === 0 ? '$0' : `$${plan.price}`}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {plan.price === 0 ? 'forever' : 'per month'}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -271,9 +400,14 @@ export default function RegisterPage() {
             />
             <span className="text-muted-foreground">
               I agree to the{' '}
-              <a href="#" className="text-primary font-medium">Terms</a>
-              {' '}and{' '}
-              <a href="#" className="text-primary font-medium">Privacy Policy</a>.
+              <a href="#" className="text-primary font-medium">
+                Terms
+              </a>{' '}
+              and{' '}
+              <a href="#" className="text-primary font-medium">
+                Privacy Policy
+              </a>
+              .
             </span>
           </label>
           {error.terms && (

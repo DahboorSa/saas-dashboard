@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 const url = import.meta.env.VITE_NEST_API_URL;
-if (!url) throw new Error('VITE_NEST_API_URL is not set — copy .env and restart the dev server');
+if (!url)
+  throw new Error(
+    'VITE_NEST_API_URL is not set — copy .env and restart the dev server',
+  );
 
 async function loginApi(email: string, password: string) {
   try {
@@ -88,6 +91,61 @@ async function resendVerificationEmail(email: string) {
   }
 }
 
+async function getPlans() {
+  try {
+    const response = await axios.get(`${url}/plans`);
+    return response;
+  } catch (error) {
+    console.error('Get plans failed:', error);
+    throw error;
+  }
+}
+
+async function getMembers() {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${url}/organizations/members`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response;
+  } catch (error) {
+    console.error('Get members failed:', error);
+    throw error;
+  }
+}
+
+async function getInvitations() {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${url}/invitations`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log('API response for getInvitations:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Get invitations failed:', error);
+    throw error;
+  }
+}
+type InvitationPayload = {
+  email: string;
+  role: string;
+};
+
+async function sendInvitation(payload: InvitationPayload[]) {
+  try {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.post(`${url}/invitations`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log(`API response for sendInvitation:`, response.data);
+    return response;
+  } catch (error) {
+    console.error(`Send invitation failed:`, error);
+    throw error;
+  }
+}
+
 export {
   loginApi,
   registerApi,
@@ -95,4 +153,8 @@ export {
   resetPassword,
   forgotPassword,
   resendVerificationEmail,
+  getPlans,
+  getMembers,
+  getInvitations,
+  sendInvitation,
 };
