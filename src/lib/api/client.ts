@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { tokenStore } from '@/lib/tokenStore';
 
 const url = import.meta.env.VITE_NEST_API_URL;
 if (!url)
@@ -6,13 +7,17 @@ if (!url)
     'VITE_NEST_API_URL is not set — copy .env and restart the dev server',
   );
 
+const apiClient = axios.create({ baseURL: url });
+
+apiClient.interceptors.request.use((config) => {
+  const token = tokenStore.get();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 async function loginApi(email: string, password: string) {
   try {
-    const response = await axios.post(`${url}/auth/login`, {
-      email,
-      password,
-    });
-    return response;
+    return await apiClient.post('/auth/login', { email, password });
   } catch (error) {
     console.error('Login failed:', error);
     throw error;
@@ -27,14 +32,13 @@ async function registerApi(
   lastName: string,
 ) {
   try {
-    const response = await axios.post(`${url}/auth/register`, {
+    return await apiClient.post('/auth/register', {
       email,
       password,
       name: orgName,
       firstName,
       lastName,
     });
-    return response;
   } catch (error) {
     console.error('Registration failed:', error);
     throw error;
@@ -43,11 +47,7 @@ async function registerApi(
 
 async function verifyEmail(token: string) {
   try {
-    const response = await axios.post(
-      `${url}/auth/verify-email?token=${token}`,
-      {},
-    );
-    return response;
+    return await apiClient.post(`/auth/verify-email?token=${token}`, {});
   } catch (error) {
     console.error('Email verification failed:', error);
     throw error;
@@ -56,11 +56,7 @@ async function verifyEmail(token: string) {
 
 async function resetPassword(password: string, token: string) {
   try {
-    const response = await axios.post(`${url}/auth/reset-password`, {
-      password,
-      token,
-    });
-    return response;
+    return await apiClient.post('/auth/reset-password', { password, token });
   } catch (error) {
     console.error('Password reset failed:', error);
     throw error;
@@ -69,10 +65,7 @@ async function resetPassword(password: string, token: string) {
 
 async function forgotPassword(email: string) {
   try {
-    const response = await axios.post(`${url}/auth/forgot-password`, {
-      email,
-    });
-    return response;
+    return await apiClient.post('/auth/forgot-password', { email });
   } catch (error) {
     console.error('Forgot password failed:', error);
     throw error;
@@ -81,10 +74,7 @@ async function forgotPassword(email: string) {
 
 async function resendVerificationEmail(email: string) {
   try {
-    const response = await axios.post(`${url}/auth/resend-verification`, {
-      email,
-    });
-    return response;
+    return await apiClient.post('/auth/resend-verification', { email });
   } catch (error) {
     console.error('Resend verification failed:', error);
     throw error;
@@ -93,8 +83,7 @@ async function resendVerificationEmail(email: string) {
 
 async function getPlans() {
   try {
-    const response = await axios.get(`${url}/plans`);
-    return response;
+    return await apiClient.get('/plans');
   } catch (error) {
     console.error('Get plans failed:', error);
     throw error;
@@ -103,11 +92,7 @@ async function getPlans() {
 
 async function getMembers() {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${url}/organizations/members`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response;
+    return await apiClient.get('/organizations/members');
   } catch (error) {
     console.error('Get members failed:', error);
     throw error;
@@ -116,10 +101,7 @@ async function getMembers() {
 
 async function getInvitations() {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.get(`${url}/invitations`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiClient.get('/invitations');
     console.log('API response for getInvitations:', response.data);
     return response;
   } catch (error) {
@@ -127,6 +109,7 @@ async function getInvitations() {
     throw error;
   }
 }
+
 type InvitationPayload = {
   email: string;
   role: string;
@@ -134,14 +117,21 @@ type InvitationPayload = {
 
 async function sendInvitation(payload: InvitationPayload[]) {
   try {
-    const token = localStorage.getItem('accessToken');
-    const response = await axios.post(`${url}/invitations`, payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log(`API response for sendInvitation:`, response.data);
+    const response = await apiClient.post('/invitations', payload);
+    console.log('API response for sendInvitation:', response.data);
     return response;
   } catch (error) {
-    console.error(`Send invitation failed:`, error);
+    console.error('Send invitation failed:', error);
+    throw error;
+  }
+}
+async function getOrganizationDetails() {
+  try {
+    const response = await apiClient.get('/organizations/me');
+    console.log('API response for getOrganizationDetails:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Get organization details failed:', error);
     throw error;
   }
 }
@@ -157,4 +147,5 @@ export {
   getMembers,
   getInvitations,
   sendInvitation,
+  getOrganizationDetails,
 };

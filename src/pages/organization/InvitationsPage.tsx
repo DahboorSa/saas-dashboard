@@ -1,20 +1,14 @@
 import { Button } from '@/components/ui/button';
-import { getInvitations, sendInvitation } from '@/lib/api/client';
+import { sendInvitation } from '@/lib/api/client';
+import { useAppSelector } from '@/store/hooks';
+import type { Invitation } from '@/store/slices/invitationsSlice';
 import { ChevronDown, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type Tab = 'Pending' | 'Accepted' | 'Expired';
 type Role = 'member' | 'admin';
 type Recipient = { email: string; role: Role };
 
-type InvitationRow = {
-  email: string;
-  role: Role;
-  invitedBy: string;
-  createdAt: string;
-  expiresAt: string;
-  status: string;
-};
 
 function RoleBadge({ role }: { role: string }) {
   const base =
@@ -37,37 +31,18 @@ export default function InvitationsPage() {
   const [recipients, setRecipients] = useState<Recipient[]>([
     { email: '', role: 'member' },
   ]);
-  const [pendingMembers, setPendingMembers] = useState<InvitationRow[]>([]);
-  const [acceptedMembers, setAcceptedMembers] = useState<InvitationRow[]>([]);
-  const [expiredMembers, setExpiredMembers] = useState<InvitationRow[]>([]);
 
-  useEffect(() => {
-    getInvitations()
-      .then((res) => {
-        setPendingMembers(
-          res.data.filter((inv: InvitationRow) => inv.status === 'pending'),
-        );
-        setAcceptedMembers(
-          res.data.filter((inv: InvitationRow) => inv.status === 'accepted'),
-        );
-        setExpiredMembers(
-          res.data.filter((inv: InvitationRow) => inv.status === 'expired'),
-        );
-      })
-      .catch((err) => {
-        console.error('Failed to fetch invitations:', err);
-      });
-  }, []);
+  const { data: invitations } = useAppSelector((s) => s.invitations);
 
-  const ROWS_BY_TAB: Record<Tab, Array<InvitationRow>> = {
-    Pending: pendingMembers,
-    Accepted: acceptedMembers,
-    Expired: expiredMembers,
+  const ROWS_BY_TAB: Record<Tab, Invitation[]> = {
+    Pending: invitations.filter((i) => i.status === 'pending') as Invitation[],
+    Accepted: invitations.filter((i) => i.status === 'accepted') as Invitation[],
+    Expired: invitations.filter((i) => i.status === 'expired') as Invitation[],
   };
   const COUNTS: Record<Tab, number> = {
-    Pending: pendingMembers.length,
-    Accepted: acceptedMembers.length,
-    Expired: expiredMembers.length,
+    Pending: ROWS_BY_TAB.Pending.length,
+    Accepted: ROWS_BY_TAB.Accepted.length,
+    Expired: ROWS_BY_TAB.Expired.length,
   };
 
   const rows = ROWS_BY_TAB[activeTab];

@@ -1,11 +1,13 @@
 import AuthBrand from '@/components/auth/AuthBrand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 import { loginApi } from '@/lib/api/client';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
+  const { login, user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState({
@@ -13,8 +15,9 @@ export default function LoginPage() {
     password: '',
   });
   const [apiError, setApiError] = useState('');
-
   const navigate = useNavigate();
+
+  if (user) return <Navigate to="/overview" replace />;
 
   const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -39,9 +42,8 @@ export default function LoginPage() {
     if (!validateForm(email, password)) return;
     loginApi(email, password)
       .then((response) => {
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-        navigate('/dashboard');
+        login(response.data.accessToken, response.data.refreshToken);
+        navigate('/overview');
       })
       .catch(() => {
         setApiError('Invalid email or password.');
@@ -92,9 +94,7 @@ export default function LoginPage() {
               <p className="text-sm text-destructive">{error.password}</p>
             )}
           </div>
-          {apiError && (
-            <p className="text-sm text-destructive">{apiError}</p>
-          )}
+          {apiError && <p className="text-sm text-destructive">{apiError}</p>}
           <Button type="submit" className="w-full">
             Sign in
           </Button>

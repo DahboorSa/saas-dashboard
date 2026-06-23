@@ -1,7 +1,14 @@
 import { Button } from '@/components/ui/button';
-import { getMembers } from '@/lib/api/client';
-import { CheckCircle2, Filter, MinusCircle, MoreVertical, Plus, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useAppSelector } from '@/store/hooks';
+import {
+  CheckCircle2,
+  Filter,
+  MinusCircle,
+  MoreVertical,
+  Plus,
+  Search,
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface Member {
   id: string;
@@ -36,11 +43,28 @@ function getDisplayName(m: Member): string {
 }
 
 function RoleBadge({ role }: { role: string }) {
-  const base = 'inline-flex items-center rounded-md px-2 py-0.5 text-[10.5px] font-semibold font-mono tracking-wide uppercase';
+  const base =
+    'inline-flex items-center rounded-md px-2 py-0.5 text-[10.5px] font-semibold font-mono tracking-wide uppercase';
   const r = role.toUpperCase();
-  if (r === 'OWNER') return <span className={`${base} bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200`}>{r}</span>;
-  if (r === 'ADMIN') return <span className={`${base} bg-blue-50 text-blue-700 ring-1 ring-blue-200`}>{r}</span>;
-  return <span className={`${base} bg-gray-100 text-gray-600 ring-1 ring-gray-200`}>{r}</span>;
+  if (r === 'OWNER')
+    return (
+      <span
+        className={`${base} bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200`}
+      >
+        {r}
+      </span>
+    );
+  if (r === 'ADMIN')
+    return (
+      <span className={`${base} bg-blue-50 text-blue-700 ring-1 ring-blue-200`}>
+        {r}
+      </span>
+    );
+  return (
+    <span className={`${base} bg-gray-100 text-gray-600 ring-1 ring-gray-200`}>
+      {r}
+    </span>
+  );
 }
 
 function VerifiedIcon({ isVerified }: { isVerified: boolean }) {
@@ -49,39 +73,42 @@ function VerifiedIcon({ isVerified }: { isVerified: boolean }) {
 }
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
-  const base = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium';
-  if (isActive) return (
-    <span className={`${base} bg-emerald-50 text-emerald-700`}>
-      <span className="size-1.5 rounded-full bg-emerald-500" />Active
-    </span>
-  );
+  const base =
+    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium';
+  if (isActive)
+    return (
+      <span className={`${base} bg-emerald-50 text-emerald-700`}>
+        <span className="size-1.5 rounded-full bg-emerald-500" />
+        Active
+      </span>
+    );
   return (
     <span className={`${base} bg-red-50 text-red-600`}>
-      <span className="size-1.5 rounded-full bg-red-500" />Suspended
+      <span className="size-1.5 rounded-full bg-red-500" />
+      Suspended
     </span>
   );
 }
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const { data: members } = useAppSelector((s) => s.members);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState('All roles');
   const [selectedStatus, setSelectedStatus] = useState('All statuses');
 
-  useEffect(() => {
-    getMembers()
-      .then((res) => setMembers(res.data))
-      .catch(() => setError('Failed to load members.'))
-      .finally(() => setLoading(false));
-  }, []);
-
   const filtered = members.filter((m) => {
     const name = getDisplayName(m).toLowerCase();
-    const matchSearch = !search || name.includes(search.toLowerCase()) || m.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = selectedRole === 'All roles' || m.role.toUpperCase() === selectedRole;
-    const matchStatus = selectedStatus === 'All statuses' || (selectedStatus === 'Active' ? m.isActive : !m.isActive);
+    const matchSearch =
+      !search ||
+      name.includes(search.toLowerCase()) ||
+      m.email.toLowerCase().includes(search.toLowerCase());
+    const matchRole =
+      selectedRole === 'All roles' || m.role.toUpperCase() === selectedRole;
+    const matchStatus =
+      selectedStatus === 'All statuses' ||
+      (selectedStatus === 'Active' ? m.isActive : !m.isActive);
     return matchSearch && matchRole && matchStatus;
   });
 
@@ -92,9 +119,13 @@ export default function MembersPage() {
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Members</h1>
           <p className="mt-0.5 text-sm text-gray-500">
-            {loading ? 'Loading…' : `${members.length} member${members.length !== 1 ? 's' : ''}`}
+            {loading
+              ? 'Loading…'
+              : `${members.length} member${members.length !== 1 ? 's' : ''}`}
             {' · '}
-            <span className="font-mono text-xs">GET /organizations/members</span>
+            <span className="font-mono text-xs">
+              GET /organizations/members
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -132,14 +163,18 @@ export default function MembersPage() {
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
             >
-              {['All roles', 'OWNER', 'ADMIN', 'MEMBER'].map((r) => <option key={r}>{r}</option>)}
+              {['All roles', 'OWNER', 'ADMIN', 'MEMBER'].map((r) => (
+                <option key={r}>{r}</option>
+              ))}
             </select>
             <select
               className="rounded-lg border border-gray-200 bg-white py-1.5 pl-2.5 pr-7 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-900/10 appearance-none cursor-pointer"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
             >
-              {['All statuses', 'Active', 'Suspended'].map((s) => <option key={s}>{s}</option>)}
+              {['All statuses', 'Active', 'Suspended'].map((s) => (
+                <option key={s}>{s}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -148,7 +183,9 @@ export default function MembersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 text-xs font-medium text-gray-400 uppercase tracking-wide">
-              <th className="w-10 px-4 py-3 text-left"><input type="checkbox" className="rounded" /></th>
+              <th className="w-10 px-4 py-3 text-left">
+                <input type="checkbox" className="rounded" />
+              </th>
               <th className="px-4 py-3 text-left">Member</th>
               <th className="px-4 py-3 text-left">Role</th>
               <th className="px-4 py-3 text-left">Status</th>
@@ -160,17 +197,32 @@ export default function MembersPage() {
           <tbody className="divide-y divide-gray-50">
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Loading members…</td>
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  Loading members…
+                </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">No members match your filters.</td>
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  No members match your filters.
+                </td>
               </tr>
             )}
             {filtered.map((member) => (
-              <tr key={member.id} className="hover:bg-gray-50/60 transition-colors">
-                <td className="px-4 py-3"><input type="checkbox" className="rounded" /></td>
+              <tr
+                key={member.id}
+                className="hover:bg-gray-50/60 transition-colors"
+              >
+                <td className="px-4 py-3">
+                  <input type="checkbox" className="rounded" />
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <div
@@ -180,15 +232,27 @@ export default function MembersPage() {
                       {getInitials(member)}
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">{getDisplayName(member)}</div>
-                      <div className="text-[11px] text-gray-400 font-mono">{member.email}</div>
+                      <div className="font-medium text-gray-900">
+                        {getDisplayName(member)}
+                      </div>
+                      <div className="text-[11px] text-gray-400 font-mono">
+                        {member.email}
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3"><RoleBadge role={member.role} /></td>
-                <td className="px-4 py-3"><StatusBadge isActive={member.isActive} /></td>
-                <td className="px-4 py-3"><VerifiedIcon isVerified={member.isVerified} /></td>
-                <td className="px-4 py-3 font-mono text-xs text-gray-500">{member.userName}</td>
+                <td className="px-4 py-3">
+                  <RoleBadge role={member.role} />
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge isActive={member.isActive} />
+                </td>
+                <td className="px-4 py-3">
+                  <VerifiedIcon isVerified={member.isVerified} />
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                  {member.userName}
+                </td>
                 <td className="px-4 py-3">
                   <Button variant="ghost" size="icon-sm">
                     <MoreVertical className="size-4 text-gray-400" />
@@ -201,10 +265,16 @@ export default function MembersPage() {
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-gray-400">
-          <span>Showing {filtered.length} of {members.length} members</span>
+          <span>
+            Showing {filtered.length} of {members.length} members
+          </span>
           <div className="flex gap-1">
-            <Button variant="ghost" size="xs">← Prev</Button>
-            <Button variant="ghost" size="xs">Next →</Button>
+            <Button variant="ghost" size="xs">
+              ← Prev
+            </Button>
+            <Button variant="ghost" size="xs">
+              Next →
+            </Button>
           </div>
         </div>
       </div>

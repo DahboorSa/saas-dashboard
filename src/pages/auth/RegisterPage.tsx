@@ -1,101 +1,12 @@
 import AuthBrand from '@/components/auth/AuthBrand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getPlans, registerApi } from '@/lib/api/client';
+import { registerApi } from '@/lib/api/client';
+import { FALLBACK_PLANS, type Plan } from '@/lib/plans';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchPlans } from '@/store/slices/plansSlice';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
-type Plan = {
-  id: number;
-  name: string;
-  price: number;
-  stripePriceId: string | null;
-  trialDays: number;
-  limits: {
-    maxApiKeys: number;
-    maxMembers: number;
-    maxProjects: number;
-    maxWebhooks: number;
-    apiCallsPerMonth: number;
-  };
-  features: {
-    export: boolean;
-    webhooks: boolean;
-    analytics: boolean;
-    customDomain: boolean;
-  };
-  isActive: boolean;
-  isDefault: boolean;
-};
-
-const FALLBACK_PLANS: Plan[] = [
-  {
-    id: 1,
-    name: 'Free',
-    price: 0,
-    stripePriceId: null,
-    trialDays: 0,
-    limits: {
-      maxApiKeys: 2,
-      maxMembers: 5,
-      maxProjects: 10,
-      maxWebhooks: 0,
-      apiCallsPerMonth: 100,
-    },
-    features: {
-      export: false,
-      webhooks: false,
-      analytics: false,
-      customDomain: false,
-    },
-    isActive: true,
-    isDefault: true,
-  },
-  {
-    id: 2,
-    name: 'Pro',
-    price: 19,
-    stripePriceId: null,
-    trialDays: 14,
-    limits: {
-      maxApiKeys: 10,
-      maxMembers: 25,
-      maxProjects: 100,
-      maxWebhooks: 100,
-      apiCallsPerMonth: 50000,
-    },
-    features: {
-      export: false,
-      webhooks: true,
-      analytics: true,
-      customDomain: false,
-    },
-    isActive: true,
-    isDefault: false,
-  },
-  {
-    id: 3,
-    name: 'Enterprise',
-    price: 99,
-    stripePriceId: null,
-    trialDays: 30,
-    limits: {
-      maxApiKeys: -1,
-      maxMembers: -1,
-      maxProjects: -1,
-      maxWebhooks: -1,
-      apiCallsPerMonth: -1,
-    },
-    features: {
-      export: true,
-      webhooks: true,
-      analytics: true,
-      customDomain: true,
-    },
-    isActive: true,
-    isDefault: false,
-  },
-];
 
 function formatApiCalls(value: number) {
   if (value === -1) return 'Unlimited API calls/mo';
@@ -126,6 +37,9 @@ function toSlug(value: string) {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { data: dataPlans } = useAppSelector((s) => s.plans);
+  const plans = dataPlans.length > 0 ? dataPlans : FALLBACK_PLANS;
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -133,22 +47,14 @@ export default function RegisterPage() {
   const [orgName, setOrgName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<number>(2);
+  const [selectedPlan, setSelectedPlan] = useState<number>(
+    () => (plans.find((p) => p.isDefault) ?? plans[0]).id,
+  );
   const [terms, setTerms] = useState(false);
-  const [plans, setPlans] = useState<Plan[]>(FALLBACK_PLANS);
 
   useEffect(() => {
-    getPlans()
-      .then((res) => {
-        const data: Plan[] = res.data;
-        setPlans(data);
-        const pro = data.find((p) => p.name === 'Pro') ?? data[1] ?? data[0];
-        if (pro) setSelectedPlan(pro.id);
-      })
-      .catch(() => {
-        // FALLBACK_PLANS already set as initial state
-      });
-  }, []);
+    dispatch(fetchPlans());
+  }, [dispatch]);
 
   const [error, setError] = useState({
     firstName: '',

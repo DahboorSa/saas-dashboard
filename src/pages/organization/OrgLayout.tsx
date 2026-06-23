@@ -1,14 +1,18 @@
+import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const tabs = [
   { label: 'General', to: '/organization/general' },
   { label: 'Members', to: '/organization/members' },
-  { label: 'Invitations', to: '/organization/invitations' },
+  { label: 'Invitations', to: '/organization/invitations', roles: ['owner', 'admin'] },
   { label: 'Plans & billing', to: '/organization/billing' },
   { label: 'Danger zone', to: '/organization/danger' },
 ];
 
 export default function OrgLayout() {
+  const { user } = useAuth();
+  const visibleTabs = tabs.filter((t) => !t.roles || (user && t.roles.includes(user.role)));
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <nav
@@ -35,7 +39,7 @@ export default function OrgLayout() {
         >
           Organization
         </p>
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
