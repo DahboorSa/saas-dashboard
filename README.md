@@ -4,14 +4,14 @@ Frontend for the [NestJS SaaS Starter](https://github.com/DahboorSa/nestjs-saas-
 
 ## Stack
 
-React 19 · TypeScript 6 · Vite 8 · Tailwind CSS v4 · shadcn/ui (Radix) · React Router v7 · Axios
+React 19 · TypeScript 6 · Vite 8 · Tailwind CSS v4 · shadcn/ui (Radix) · React Router v7 · Axios · Redux Toolkit
 
 ## Setup
 
 ```bash
-cp .env .env.local          # copy and fill in VITE_NEST_API_URL
+cp .env.example .env.local   # fill in VITE_NEST_API_URL
 yarn install
-yarn dev                    # http://localhost:5173
+yarn dev                     # http://localhost:5173
 ```
 
 **.env variables:**
@@ -29,15 +29,16 @@ yarn lint     # ESLint
 yarn preview  # Serve the production build locally
 ```
 
-## Backend Integration
+## Auth & Token Storage
 
-All API calls target the NestJS SaaS Starter REST API via `VITE_NEST_API_URL`.
+Tokens are never stored in `localStorage`.
 
-**Auth flow:**
-- JWT access tokens (15 min TTL) stored in `localStorage` as `accessToken`
-- Refresh tokens (7 days) stored as `refreshToken` — used for "keep me signed in"
-- Org-scoped API keys use `Authorization: Bearer <key>` header
-- Axios interceptor (planned) will auto-refresh on 401 and redirect to `/login` on failure
+- **`accessToken`** — held in a JS module-level variable (`src/lib/tokenStore.ts`). In-memory only; lost on page refresh by design (it is short-lived).
+- **`refreshToken`** — stored as an `httpOnly; Secure; SameSite=Strict` cookie set by the backend. JS cannot read it; the browser sends it automatically on every request to the same origin.
+
+**Silent session restore** — on every page load `AuthProvider` calls `POST /auth/refresh-token`. The browser attaches the httpOnly cookie; if valid, a new `accessToken` is returned and the session is restored without a login prompt. If the cookie is missing or expired the user is redirected to `/login`.
+
+**401 handling** — the Axios response interceptor catches 401s, calls `POST /auth/refresh-token` once, retries the original request transparently. Concurrent 401s are queued; only one refresh call fires. If the refresh fails, the user is redirected to `/login`.
 
 ## Screen Map
 
@@ -49,13 +50,15 @@ All API calls target the NestJS SaaS Starter REST API via `VITE_NEST_API_URL`.
 | `auth-screens.jsx` | ForgotPassword | `/forgot-password` | `pages/auth/ForgotPasswordPage.tsx` | ✅ |
 | `auth-screens.jsx` | ResetPassword | `/reset-password` | `pages/auth/ResetPasswordPage.tsx` | ✅ |
 | `auth-screens.jsx` | AcceptInvite | `/invitations/accept` | `pages/auth/AcceptInvitePage.tsx` | 🔲 |
-| `shell.jsx` | Shell layout | (layout wrapper) | `components/layout/` | 🔲 |
-| `dashboard-screens.jsx` | Overview | `/` | `pages/dashboard/OverviewPage.tsx` | 🔲 |
-| `dashboard-screens.jsx` | Usage | `/usage` | `pages/usage/UsagePage.tsx` | 🔲 |
-| `dashboard-screens.jsx` | Org General | `/organization` | `pages/org/OrgGeneralPage.tsx` | 🔲 |
-| `screens-org.jsx` | Members | `/members` | `pages/org/MembersPage.tsx` | 🔲 |
-| `screens-org.jsx` | Invitations | `/invitations` | `pages/org/InvitationsPage.tsx` | 🔲 |
-| `screens-org.jsx` | Plans & Billing | `/plans` | `pages/org/PlansPage.tsx` | 🔲 |
+| `shell.jsx` | Shell layout | (layout wrapper) | `components/layout/Shell.tsx` | ✅ |
+| `dashboard-screens.jsx` | Overview | `/overview` | `pages/dashboard/OverviewPage.tsx` | ✅ |
+| `dashboard-screens.jsx` | Usage | `/usage` | `pages/dashboard/UsagePage.tsx` | ✅ |
+| `dashboard-screens.jsx` | Audit Log | `/audit-log` | `pages/dashboard/AuditLogPage.tsx` | ✅ |
+| `screens-org.jsx` | Org General | `/organization/general` | `pages/organization/OrgGeneralPage.tsx` | ✅ |
+| `screens-org.jsx` | Members | `/organization/members` | `pages/organization/MembersPage.tsx` | ✅ |
+| `screens-org.jsx` | Invitations | `/organization/invitations` | `pages/organization/InvitationsPage.tsx` | ✅ |
+| `screens-org.jsx` | Plans & Billing | `/organization/billing` | `pages/organization/BillingPage.tsx` | ✅ |
+| — | Danger Zone | `/organization/danger` | `pages/organization/DangerZonePage.tsx` | ✅ |
 | `screens-dev.jsx` | API Keys | `/api-keys` | `pages/dev/ApiKeysPage.tsx` | 🔲 |
 | `screens-dev.jsx` | Webhooks | `/webhooks` | `pages/dev/WebhooksPage.tsx` | 🔲 |
 | `screens-dev.jsx` | Webhook Deliveries | `/webhooks/:id/deliveries` | `pages/dev/WebhookDeliveriesPage.tsx` | 🔲 |
@@ -66,27 +69,28 @@ All API calls target the NestJS SaaS Starter REST API via `VITE_NEST_API_URL`.
 
 ```
 src/
-├── routes/          # BrowserRouter + ProtectedRoute
+├── routes/
+│   ├── index.tsx          # BrowserRouter + full route tree
+│   ├── ProtectedRoute.tsx # auth guard (respects isLoading for silent restore)
+│   └── RoleRoute.tsx      # RBAC guard — allowed: string[], fallback route
+├── contexts/
+│   └── AuthContext.tsx    # user, isLoading, login(accessToken), logout()
 ├── pages/
-│   ├── auth/        # Login, Register, ForgotPassword, VerifyEmail, ResetPassword
-│   ├── dashboard/   # Overview (placeholder)
-│   ├── usage/       # planned
-│   ├── org/         # planned: General, Members, Invitations, Plans
-│   ├── dev/         # planned: API Keys, Webhooks, Deliveries
-│   └── account/     # planned: Profile, Security
+│   ├── auth/              # Login, Register, ForgotPassword, VerifyEmail, ResetPassword, ChangePassword
+│   ├── dashboard/         # Overview, Usage, AuditLog
+│   └── organization/      # General, Members, Invitations, Billing, DangerZone
 ├── components/
-│   ├── ui/          # shadcn primitives: Button, Input, Card
-│   ├── auth/        # AuthBrand
-│   ├── layout/      # planned: Sidebar, Topbar, Shell
-│   ├── dashboard/   # planned
-│   ├── members/     # planned
-│   ├── api-keys/    # planned
-│   ├── webhooks/    # planned
-│   └── shared/      # planned
+│   ├── ui/                # shadcn primitives: Button, Input, Card
+│   ├── auth/              # AuthBrand
+│   └── layout/            # Shell (Sidebar + Topbar)
+├── store/
+│   ├── index.ts           # configureStore
+│   ├── hooks.ts           # useAppDispatch, useAppSelector
+│   └── slices/            # org, plans, members, invitations, auditLogs, usage
 └── lib/
-    ├── api/         # Axios client + endpoint functions
-    ├── hooks/       # planned: custom hooks
-    ├── store/       # planned: state management
-    ├── validations/ # planned: Zod schemas
-    └── utils.ts     # cn() helper
+    ├── api/
+    │   └── client.ts      # Axios instance, request/response interceptors, all API functions
+    ├── tokenStore.ts      # in-memory accessToken store (never localStorage)
+    ├── plans.ts           # plan type definitions
+    └── utils.ts           # cn() helper
 ```

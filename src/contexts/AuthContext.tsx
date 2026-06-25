@@ -1,5 +1,12 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from 'react';
 import { tokenStore } from '@/lib/tokenStore';
+import { refreshSession, logoutApi } from '@/lib/api/client';
 
 export type AuthUser = {
   userId: string;
@@ -10,7 +17,8 @@ export type AuthUser = {
 
 type AuthContextValue = {
   user: AuthUser | null;
-  login: (accessToken: string, refreshToken: string) => void;
+  isLoading: boolean;
+  login: (accessToken: string) => void;
   logout: () => void;
 };
 
@@ -26,37 +34,36 @@ function decodeToken(token: string): AuthUser {
   };
 }
 
-function initUser(): AuthUser | null {
-  try {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return null;
-    const user = decodeToken(token);
-    tokenStore.set(token);
-    return user;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(initUser);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  function login(accessToken: string, refreshToken: string) {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+  // On mount: attempt silent session restore via httpOnly cookie
+  useEffect(() => {
+    refreshSession()
+      .then((accessToken) => {
+        tokenStore.set(accessToken);
+        setUser(decodeToken(accessToken));
+      })
+      .catch(() => {
+        // Cookie missing or expired — user must log in
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  function login(accessToken: string) {
     tokenStore.set(accessToken);
     setUser(decodeToken(accessToken));
   }
 
   function logout() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    logoutApi().catch(() => {}); // fire-and-forget — backend clears the cookie
     tokenStore.clear();
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

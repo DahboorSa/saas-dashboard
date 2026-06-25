@@ -91,9 +91,7 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 }
 
 export default function MembersPage() {
-  const { data: members } = useAppSelector((s) => s.members);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: members, loading, error } = useAppSelector((s) => s.members);
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState('All roles');
   const [selectedStatus, setSelectedStatus] = useState('All statuses');

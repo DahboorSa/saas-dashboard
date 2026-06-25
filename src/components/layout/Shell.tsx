@@ -1,9 +1,11 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchAuditLogs } from '@/store/slices/auditLogsSlice';
 import { fetchInvitations } from '@/store/slices/invitationsSlice';
 import { fetchMembers } from '@/store/slices/membersSlice';
 import { fetchOrg } from '@/store/slices/orgSlice';
 import { fetchPlans } from '@/store/slices/plansSlice';
+import { fetchUsage } from '@/store/slices/usageSlice';
 import {
   BarChart2,
   CreditCard,
@@ -26,7 +28,12 @@ const workspaceNav = [
 const orgNav = [
   { label: 'General', to: '/organization/general', icon: Settings },
   { label: 'Members', to: '/organization/members', icon: Users },
-  { label: 'Invitations', to: '/organization/invitations', icon: Mail, roles: ['owner', 'admin'] },
+  {
+    label: 'Invitations',
+    to: '/organization/invitations',
+    icon: Mail,
+    roles: ['owner', 'admin'],
+  },
   { label: 'Plans & billing', to: '/organization/billing', icon: CreditCard },
   { label: 'Danger zone', to: '/organization/danger', icon: TriangleAlert },
 ];
@@ -77,13 +84,23 @@ export default function Shell() {
     dispatch(fetchPlans());
     dispatch(fetchMembers());
     dispatch(fetchInvitations());
+    dispatch(fetchAuditLogs());
+    dispatch(fetchUsage());
   }, [dispatch, orgLoaded]);
 
   return (
     <div className="flex min-h-screen">
       <aside className="w-52 shrink-0 border-r border-border flex flex-col gap-6 p-3">
-        <NavGroup label="Workspace" items={workspaceNav} userRole={user?.role ?? ''} />
-        <NavGroup label="Organization" items={orgNav} userRole={user?.role ?? ''} />
+        <NavGroup
+          label="Workspace"
+          items={workspaceNav}
+          userRole={user?.role ?? ''}
+        />
+        <NavGroup
+          label="Organization"
+          items={orgNav}
+          userRole={user?.role ?? ''}
+        />
       </aside>
 
       <main className="flex-1 p-8 overflow-auto">
