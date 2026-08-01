@@ -34,7 +34,12 @@ const orgNav = [
     icon: Mail,
     roles: ['owner', 'admin'],
   },
-  { label: 'Plans & billing', to: '/organization/billing', icon: CreditCard },
+  {
+    label: 'Plans & billing',
+    to: '/organization/billing',
+    icon: CreditCard,
+    roles: ['owner'],
+  },
   { label: 'Danger zone', to: '/organization/danger', icon: TriangleAlert },
 ];
 

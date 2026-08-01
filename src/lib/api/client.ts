@@ -154,3 +154,9 @@ export async function getUsage() {
 export async function getAuditLogs() {
   return apiClient.get('/audit-logs');
 }
+
+type UpdatePlanPayload = { plan: string };
+
+export async function updateOrganizationPlan(payload: UpdatePlanPayload) {
+  return apiClient.patch('/organizations/plan', payload);
+}

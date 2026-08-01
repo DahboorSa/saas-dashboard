@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { FALLBACK_PLANS, type Plan } from '@/lib/plans';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { Bolt, Check, CreditCard, Download, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
+import { updateOrganizationPlan } from '@/lib/api/client';
+import { fetchOrg } from '@/store/slices/orgSlice';
 
 type Invoice = {
   date: string;
@@ -11,12 +13,10 @@ type Invoice = {
 };
 
 function formatPrice(plan: Plan) {
-  if (plan.name === 'Enterprise') return 'Custom';
   return plan.price === 0 ? '$0' : `$${plan.price}`;
 }
 
 function formatPer(plan: Plan) {
-  if (plan.name === 'Enterprise') return 'contact sales';
   return plan.price === 0 ? 'forever' : 'per month';
 }
 
@@ -60,6 +60,13 @@ export default function BillingPage() {
   const currentPlanId = organization?.plan?.id ?? 1;
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
+  const dispatch = useAppDispatch();
+
+  function updatePlan(planName: string) {
+    return updateOrganizationPlan({ plan: planName }).then(() => {
+      dispatch(fetchOrg());
+    });
+  }
   return (
     <div>
       {/* Header */}
@@ -153,16 +160,21 @@ export default function BillingPage() {
                   <Button variant="outline" className="w-full" disabled>
                     Current plan
                   </Button>
-                ) : plan.name === 'Enterprise' ? (
-                  <Button variant="outline" className="w-full">
-                    Contact sales
-                  </Button>
                 ) : plan.id < currentPlanId ? (
-                  <Button variant="outline" className="w-full">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => updatePlan(plan.name)}
+                  >
                     Downgrade to {plan.name}
                   </Button>
                 ) : (
-                  <Button className="w-full">Upgrade to {plan.name}</Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => updatePlan(plan.name)}
+                  >
+                    Upgrade to {plan.name}
+                  </Button>
                 )}
               </div>
             </div>

@@ -8,7 +8,6 @@ import {
   Download,
   Key,
   Mail,
-  Plus,
   Sparkles,
   TrendingDown,
   TrendingUp,
@@ -109,8 +108,7 @@ export default function OverviewPage() {
   const { data: members } = useAppSelector((s) => s.members);
   const { data: invitations } = useAppSelector((s) => s.invitations);
   const { data: usage } = useAppSelector((s) => s.usage);
-  const { maxApiKeys, maxMembers, maxProjects, maxWebhooks, apiCallsPerMonth } =
-    organization?.plan?.limits || {};
+  const { maxMembers, apiCallsPerMonth } = organization?.plan?.limits || {};
   const activeMembers = members?.filter((m) => m.isActive).length ?? 0;
   const pendingInvites =
     invitations?.filter((i) => i.status === 'pending').length ?? 0;
@@ -131,9 +129,6 @@ export default function OverviewPage() {
         <div className="flex gap-2">
           <Button variant="ghost" size="sm">
             <Download size={13} /> Export
-          </Button>
-          <Button size="sm">
-            <Plus size={13} /> Invite member
           </Button>
         </div>
       </div>
@@ -184,48 +179,47 @@ export default function OverviewPage() {
         />
       </div>
 
-      {/* Charts row */}
-      <div
-        className="grid gap-4"
-        style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14 }}
-      >
-        {/* Recent activity */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="px-5 py-4 border-b border-border">
+      {/* Recent activity */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div>
             <h3 className="text-sm font-medium">Recent activity</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Audit log · last 24h
             </p>
           </div>
-          <div>
-            {staticActivity.map((entry, i) => {
-              const { icon: Icon, title } =
-                ACTION_MAP[entry.action] ?? DEFAULT_ACTION;
-              const sub =
-                (entry.metadata.email as string) ??
-                (entry.metadata.name as string) ??
-                `${entry.resourceType} #${entry.resourceId}`;
-              return (
-                <div
-                  key={i}
-                  className={`flex items-start gap-2.5 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
-                >
-                  <div className="w-7 h-7 rounded-md bg-muted flex items-center justify-center shrink-0">
-                    <Icon size={13} className="text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{title}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {sub}
-                    </p>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground font-mono shrink-0">
-                    {relativeTime(entry.createdAt)}
-                  </span>
+          <Button variant="ghost" size="sm">
+            View all
+          </Button>
+        </div>
+        <div>
+          {staticActivity.map((entry, i) => {
+            const { icon: Icon, title } =
+              ACTION_MAP[entry.action] ?? DEFAULT_ACTION;
+            const sub =
+              (entry.metadata.email as string) ??
+              (entry.metadata.name as string) ??
+              `${entry.resourceType} #${entry.resourceId}`;
+            return (
+              <div
+                key={i}
+                className={`flex items-start gap-2.5 px-4 py-3 ${i > 0 ? 'border-t border-border' : ''}`}
+              >
+                <div className="w-7 h-7 rounded-md bg-muted flex items-center justify-center shrink-0">
+                  <Icon size={13} className="text-muted-foreground" />
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{title}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {sub}
+                  </p>
+                </div>
+                <span className="text-[11px] text-muted-foreground font-mono shrink-0">
+                  {relativeTime(entry.createdAt)}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

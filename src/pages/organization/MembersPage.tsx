@@ -1,3 +1,4 @@
+import InviteModal from '@/components/members/InviteModal';
 import { Button } from '@/components/ui/button';
 import { useAppSelector } from '@/store/hooks';
 import {
@@ -95,6 +96,7 @@ export default function MembersPage() {
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState('All roles');
   const [selectedStatus, setSelectedStatus] = useState('All statuses');
+  const [modalOpen, setModalOpen] = useState(false);
 
   const filtered = members.filter((m) => {
     const name = getDisplayName(m).toLowerCase();
@@ -112,6 +114,8 @@ export default function MembersPage() {
 
   return (
     <div>
+      <InviteModal open={modalOpen} onClose={() => setModalOpen(false)} />
+
       {/* Header */}
       <div className="flex items-start justify-between mb-5">
         <div>
@@ -130,7 +134,7 @@ export default function MembersPage() {
           <Button variant="outline" size="sm">
             <Filter className="size-3.5" /> Filter
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setModalOpen(true)}>
             <Plus className="size-3.5" /> Invite member
           </Button>
         </div>
