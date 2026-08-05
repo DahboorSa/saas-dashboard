@@ -39,7 +39,7 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       original._retry ||
-      original.url === '/auth/refresh'
+      original.url === '/auth/refresh-token'
     ) {
       return Promise.reject(error);
     }

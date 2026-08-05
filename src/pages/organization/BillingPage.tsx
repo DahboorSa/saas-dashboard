@@ -190,10 +190,6 @@ export default function BillingPage() {
             <h3 className="text-sm font-semibold text-gray-900">
               Payment method
             </h3>
-            <p className="mt-0.5 text-xs text-gray-400">
-              Stored on Stripe ·{' '}
-              <span className="font-mono">cus_QkX9···m2</span>
-            </p>
           </div>
           <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
             <div className="flex size-10 items-center justify-center rounded-full bg-gray-100">

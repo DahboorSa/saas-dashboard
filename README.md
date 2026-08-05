@@ -94,3 +94,9 @@ src/
     ├── plans.ts           # plan type definitions
     └── utils.ts           # cn() helper
 ```
+
+## License
+
+Noncommercial — see [LICENSE](LICENSE). Free to use, copy, modify, and share for education, learning, personal projects, and research. Commercial use requires prior written permission.
+
+This project was built as a learning exercise, and it's shared in that same spirit: dig through the code, borrow patterns, use it as a reference for your own SaaS dashboard, or learn from the mistakes in it. If it helps you understand something — auth flows, RBAC, Redux slices, whatever — that's exactly what it's here for.
