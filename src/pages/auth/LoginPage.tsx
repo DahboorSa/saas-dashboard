@@ -42,7 +42,7 @@ export default function LoginPage() {
     if (!validateForm(email, password)) return;
     loginApi(email, password)
       .then((response) => {
-        login(response.data.accessToken, response.data.refreshToken);
+        login(response.data.accessToken);
         navigate('/overview');
       })
       .catch(() => {

@@ -58,7 +58,7 @@ export default function BillingPage() {
   const { data: dataPlans } = useAppSelector((s) => s.plans);
   const plans = dataPlans.length > 0 ? dataPlans : FALLBACK_PLANS;
   const currentPlanId = organization?.plan?.id ?? 1;
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices] = useState<Invoice[]>([]);
 
   const dispatch = useAppDispatch();
 
