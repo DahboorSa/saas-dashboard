@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-context';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchAuditLogs } from '@/store/slices/auditLogsSlice';
 import { fetchInvitations } from '@/store/slices/invitationsSlice';

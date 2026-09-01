@@ -1,7 +1,7 @@
 import AuthBrand from '@/components/auth/AuthBrand';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-context';
 import { loginApi } from '@/lib/api/client';
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';

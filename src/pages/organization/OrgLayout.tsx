@@ -1,4 +1,4 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-context';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const tabs = [

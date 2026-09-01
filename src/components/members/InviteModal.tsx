@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { sendInvitation } from '@/lib/api/client';
 import { ChevronDown, Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type Role = 'member' | 'admin';
 type Recipient = { email: string; role: Role };
@@ -17,15 +17,14 @@ export default function InviteModal({ open, onClose }: InviteModalProps) {
   ]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setRecipients([{ email: '', role: 'member' }]);
-    }
-  }, [open]);
-
   if (!open) return null;
 
   const filledCount = recipients.filter((r) => r.email.trim()).length;
+
+  function handleClose() {
+    setRecipients([{ email: '', role: 'member' }]);
+    onClose();
+  }
 
   function updateRecipient(
     index: number,
@@ -51,7 +50,7 @@ export default function InviteModal({ open, onClose }: InviteModalProps) {
   function onSubmit() {
     setLoading(true);
     sendInvitation(recipients)
-      .then(() => onClose())
+      .then(() => handleClose())
       .catch((err) => console.error('Failed to send invitations:', err))
       .finally(() => setLoading(false));
   }
@@ -59,7 +58,7 @@ export default function InviteModal({ open, onClose }: InviteModalProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
       <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl">
         {/* Header */}
@@ -73,7 +72,7 @@ export default function InviteModal({ open, onClose }: InviteModalProps) {
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="ml-4 rounded-md p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             title="Close"
           >
@@ -146,7 +145,7 @@ export default function InviteModal({ open, onClose }: InviteModalProps) {
             recipient
           </span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button variant="outline" size="sm" onClick={handleClose}>
               Cancel
             </Button>
             <Button

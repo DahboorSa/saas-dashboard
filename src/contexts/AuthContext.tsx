@@ -1,28 +1,7 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type ReactNode,
-} from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { tokenStore } from '@/lib/tokenStore';
 import { refreshSession, logoutApi } from '@/lib/api/client';
-
-export type AuthUser = {
-  userId: string;
-  orgId: string;
-  role: string;
-  email: string;
-};
-
-type AuthContextValue = {
-  user: AuthUser | null;
-  isLoading: boolean;
-  login: (accessToken: string) => void;
-  logout: () => void;
-};
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthUser } from '@/contexts/auth-context';
 
 function decodeToken(token: string): AuthUser {
   const payload = JSON.parse(atob(token.split('.')[1]));
@@ -67,10 +46,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
-  return ctx;
 }
