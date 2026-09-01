@@ -1,0 +1,26 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploys the Vite SPA as a static site.
+services:
+  - type: web
+    name: saas-dashboard
+    runtime: static
+    buildCommand: yarn install --frozen-lockfile && yarn build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      # Inlined into the bundle at build time (Vite). Must be set or the app
+      # throws on load — see src/lib/api/client.ts.
+      - key: VITE_NEST_API_URL
+        value: https://nestjs-saas-starter-o50q.onrender.com
+    routes:
+      # SPA fallback: serve index.html for client-side routes (React Router).
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
