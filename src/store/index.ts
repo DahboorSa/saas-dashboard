@@ -5,6 +5,7 @@ import orgReducer from './slices/orgSlice';
 import plansReducer from './slices/plansSlice';
 import auditLogsReducer from './slices/auditLogsSlice';
 import usageReducer from './slices/usageSlice';
+import subscriptionReducer from './slices/subscriptionSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     invitations: invitationsReducer,
     auditLogs: auditLogsReducer,
     usage: usageReducer,
+    subscription: subscriptionReducer,
   },
 });
 

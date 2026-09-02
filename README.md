@@ -86,7 +86,7 @@ src/
 ├── store/
 │   ├── index.ts           # configureStore
 │   ├── hooks.ts           # useAppDispatch, useAppSelector
-│   └── slices/            # org, plans, members, invitations, auditLogs, usage
+│   └── slices/            # org, plans, members, invitations, auditLogs, usage, subscription
 └── lib/
     ├── api/
     │   └── client.ts      # Axios instance, request/response interceptors, all API functions

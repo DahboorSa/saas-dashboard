@@ -5,6 +5,7 @@ import { fetchInvitations } from '@/store/slices/invitationsSlice';
 import { fetchMembers } from '@/store/slices/membersSlice';
 import { fetchOrg } from '@/store/slices/orgSlice';
 import { fetchPlans } from '@/store/slices/plansSlice';
+import { fetchSubscription } from '@/store/slices/subscriptionSlice';
 import { fetchUsage } from '@/store/slices/usageSlice';
 import {
   BarChart2,
@@ -91,7 +92,9 @@ export default function Shell() {
     dispatch(fetchInvitations());
     dispatch(fetchAuditLogs());
     dispatch(fetchUsage());
-  }, [dispatch, orgLoaded]);
+    // Billing/subscription is an owner-only endpoint on the backend.
+    if (user?.role === 'owner') dispatch(fetchSubscription());
+  }, [dispatch, orgLoaded, user?.role]);
 
   return (
     <div className="flex min-h-screen">

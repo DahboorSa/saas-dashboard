@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/auth-context';
 import { FALLBACK_PLANS, type Plan } from '@/lib/plans';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { Bolt, Check, CreditCard, Download, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { updateOrganizationPlan } from '@/lib/api/client';
 import { fetchOrg } from '@/store/slices/orgSlice';
+import { fetchSubscription } from '@/store/slices/subscriptionSlice';
 
 type Invoice = {
   date: string;
@@ -54,17 +56,31 @@ function getFeatureList(plan: Plan): string[] {
 }
 
 export default function BillingPage() {
+  const { user } = useAuth();
   const { data: organization } = useAppSelector((s) => s.org);
   const { data: dataPlans } = useAppSelector((s) => s.plans);
+  const { data: subscription } = useAppSelector((s) => s.subscription);
   const plans = dataPlans.length > 0 ? dataPlans : FALLBACK_PLANS;
   const currentPlanId = organization?.plan?.id ?? 1;
   const [invoices] = useState<Invoice[]>([]);
 
+  // Only the org owner can manage billing (GET /subscription is owner-only), and
+  // plan changes are prorated against a card on file — so a change is allowed
+  // only for an owner who already has at least one payment method.
+  const isOwner = user?.role === 'owner';
+  const hasPaymentMethod = (subscription?.paymentMethods.length ?? 0) > 0;
+  const canChangePlan = isOwner && hasPaymentMethod;
+  const changePlanBlockedReason = !isOwner
+    ? 'Only the organization owner can change the plan.'
+    : 'Add a payment method to activate billing before changing plans.';
+
   const dispatch = useAppDispatch();
 
   function updatePlan(planName: string) {
+    if (!canChangePlan) return Promise.resolve();
     return updateOrganizationPlan({ plan: planName }).then(() => {
       dispatch(fetchOrg());
+      dispatch(fetchSubscription());
     });
   }
   return (
@@ -100,6 +116,14 @@ export default function BillingPage() {
           Add payment method
         </Button>
       </div>
+
+      {/* Plan-change gate notice */}
+      {!canChangePlan && (
+        <div className="mb-5 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          <CreditCard className="size-4 shrink-0 text-gray-400" />
+          <p className="flex-1">{changePlanBlockedReason}</p>
+        </div>
+      )}
 
       {/* Plan cards */}
       <div className="grid grid-cols-3 gap-4 mb-5">
@@ -164,6 +188,8 @@ export default function BillingPage() {
                   <Button
                     variant="outline"
                     className="w-full"
+                    disabled={!canChangePlan}
+                    title={canChangePlan ? undefined : changePlanBlockedReason}
                     onClick={() => updatePlan(plan.name)}
                   >
                     Downgrade to {plan.name}
@@ -171,6 +197,8 @@ export default function BillingPage() {
                 ) : (
                   <Button
                     className="w-full"
+                    disabled={!canChangePlan}
+                    title={canChangePlan ? undefined : changePlanBlockedReason}
                     onClick={() => updatePlan(plan.name)}
                   >
                     Upgrade to {plan.name}

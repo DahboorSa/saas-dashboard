@@ -81,7 +81,7 @@ Single Axios instance with `withCredentials: true` (required for httpOnly cookie
 4. On refresh failure: clears memory, hard-redirects to `/login`.
 
 **Exported functions:**
-`refreshSession`, `logoutApi`, `loginApi`, `registerApi`, `verifyEmail`, `resetPassword`, `forgotPassword`, `resendVerificationEmail`, `getPlans`, `getMembers`, `getInvitations`, `sendInvitation`, `getOrganizationDetails`, `getUsage`, `getAuditLogs`
+`refreshSession`, `logoutApi`, `loginApi`, `registerApi`, `verifyEmail`, `resetPassword`, `forgotPassword`, `resendVerificationEmail`, `getPlans`, `getMembers`, `getInvitations`, `sendInvitation`, `getOrganizationDetails`, `getUsage`, `getAuditLogs`, `getSubscription`, `updateOrganizationPlan`
 
 ### State Management (`src/store/`)
 
@@ -95,6 +95,7 @@ Redux Toolkit store bootstrapped after login. Slices:
 | `invitationsSlice` | `invitations` | `fetchInvitations` → `GET /invitations` |
 | `auditLogsSlice` | `auditLogs` | `fetchAuditLogs` → `GET /audit-logs` |
 | `usageSlice` | `usage` | `fetchUsage` → `GET /usage` |
+| `subscriptionSlice` | `subscription` | `fetchSubscription` → `GET /subscription` (owner-only; bootstrapped in `Shell` only when `user.role === 'owner'`) |
 
 Typed hooks in `src/store/hooks.ts`: `useAppDispatch`, `useAppSelector`.
 
@@ -211,6 +212,8 @@ Backend: [NestJS SaaS Starter](https://github.com/DahboorSa/nestjs-saas-starter)
 | Method | Path | Purpose | Page |
 |---|---|---|---|
 | GET | `/usage` | Current period usage | UsagePage, Overview |
+| GET | `/subscription` | Payment status, Stripe subscription, payment methods (**owner-only**) | BillingPage |
+| PATCH | `/organizations/plan` | Change plan (`updateOrganizationPlan`) | BillingPage |
 | POST | `/payments/subscription` | Subscribe / change plan | BillingPage |
 | GET | `/payments/portal` | Stripe customer portal URL | BillingPage |
 | GET | `/payments/invoices` | List invoices | BillingPage |
@@ -221,7 +224,9 @@ Backend: [NestJS SaaS Starter](https://github.com/DahboorSa/nestjs-saas-starter)
 - `ADMIN` — can manage members, invitations, API keys, webhooks
 - `MEMBER` — read-only access to org resources
 
-Enforced on the frontend via `RoleRoute` (`src/routes/RoleRoute.tsx`).
+The JWT `role` claim is **lowercase** (`owner` / `admin` / `member`) — compare against those strings (`src/contexts/AuthContext.tsx` reads it verbatim from the token).
+
+`RoleRoute` (`src/routes/RoleRoute.tsx`) is the route-level guard (`allowed: string[]`), but is **not yet wired into `src/routes/index.tsx`**. Current role gating is nav-link visibility only: `Shell.tsx` `orgNav` hides "Plans & billing" for non-owners, and `OrgLayout.tsx` filters tabs — so a non-owner can still reach a page by direct URL. Pages that must be owner-only also check `user.role` inline (e.g. `BillingPage` disables plan changes unless `role === 'owner'` **and** a payment method exists).
 
 ### Key Backend Behaviours
 
