@@ -82,7 +82,9 @@ src/
 ├── components/
 │   ├── ui/                # shadcn primitives: Button, Input, Card
 │   ├── auth/              # AuthBrand
-│   └── layout/            # Shell (Sidebar + Topbar)
+│   ├── layout/            # Shell (Sidebar + Topbar)
+│   ├── members/           # InviteModal
+│   └── billing/           # TrialBanner (paid-plan trial reminder)
 ├── store/
 │   ├── index.ts           # configureStore
 │   ├── hooks.ts           # useAppDispatch, useAppSelector

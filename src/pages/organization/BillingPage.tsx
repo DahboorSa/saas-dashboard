@@ -1,8 +1,9 @@
+import TrialBanner from '@/components/billing/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { FALLBACK_PLANS, type Plan } from '@/lib/plans';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { Bolt, Check, CreditCard, Download, ExternalLink } from 'lucide-react';
+import { Check, CreditCard, Download, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { updateOrganizationPlan } from '@/lib/api/client';
 import { fetchOrg } from '@/store/slices/orgSlice';
@@ -101,21 +102,7 @@ export default function BillingPage() {
         </Button>
       </div>
 
-      {/* Trial banner */}
-      <div className="mb-5 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <Bolt className="size-4 shrink-0 text-amber-500" />
-        <p className="flex-1">
-          You're on the <strong>Pro trial</strong>. Trial ends{' '}
-          <strong>May 26</strong> · 4 days remaining. Add a payment method to
-          continue uninterrupted.
-        </p>
-        <Button
-          size="sm"
-          className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white border-0"
-        >
-          Add payment method
-        </Button>
-      </div>
+      <TrialBanner className="mb-5" />
 
       {/* Plan-change gate notice */}
       {!canChangePlan && (

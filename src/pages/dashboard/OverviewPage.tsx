@@ -1,3 +1,4 @@
+import TrialBanner from '@/components/billing/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { useAppSelector } from '@/store/hooks';
@@ -8,7 +9,6 @@ import {
   Download,
   Key,
   Mail,
-  Sparkles,
   TrendingDown,
   TrendingUp,
   UserCheck,
@@ -133,15 +133,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Trial banner */}
-      <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-        <Sparkles size={14} className="text-primary shrink-0" />
-        <p className="flex-1">
-          <strong>Your Pro trial ends in 4 days.</strong> Add a payment method
-          to keep your webhooks and API keys active after Apr 18.
-        </p>
-        <Button size="sm">Add payment</Button>
-      </div>
+      <TrialBanner />
 
       {/* Metric cards */}
       <div className="grid grid-cols-3 gap-4">

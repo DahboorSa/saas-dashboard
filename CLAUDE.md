@@ -109,7 +109,7 @@ Tailwind v4 — no `tailwind.config.js`. Theme tokens (colors, radius, sidebar p
 
 ### Components
 
-`src/components/ui/` — shadcn primitives (Button, Input, Card). `src/components/auth/` — AuthBrand. `src/components/layout/` — Shell (Sidebar + Topbar).
+`src/components/ui/` — shadcn primitives (Button, Input, Card). `src/components/auth/` — AuthBrand. `src/components/layout/` — Shell (Sidebar + Topbar). `src/components/members/` — InviteModal. `src/components/billing/` — TrialBanner (reads org from the store, renders only when the plan is paid and `org.trialEndsAt` is non-null, derives the countdown/end-date from `trialEndsAt`; identical everywhere, optional `className` for page spacing). Used by BillingPage and OverviewPage.
 
 ## Planned UI Design
 
